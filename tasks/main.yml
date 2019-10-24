@@ -1,0 +1,110 @@
+---
+
+- name: combine default stack parameters with user-defined stack parameters
+  set_fact:
+    _stack: '{{ _cloudformation_stack_default|combine(cloudformation_stack|default({}),recursive=True) }}'
+  # no_log: true
+  tags: [always]
+
+- name: "make sure {{ _stack.template_bucket }} bucket exists"
+  aws_s3:
+    bucket: "{{ _stack.template_bucket }}"
+    mode: create
+    encrypt: yes
+    permission: private
+    aws_access_key: '{{ _stack.aws_access_key|default(omit,true) }}'
+    aws_secret_key: '{{ _stack.aws_secret_key|default(omit,true) }}'
+    profile: '{{ _stack.profile|default(omit,true) }}'
+    region: '{{ _stack.region|default(omit,true) }}'
+  when: >-
+    _stack.state|default('present',true) == "present" and _stack.template_bucket and
+    _stack.template_bucket_path and _stack.template_local_path
+  tags: [bucket]
+
+# not possible to do this via Ansible modules as of 9/2019
+- name: block all public access via PublicAccessBlock configuration
+  command: "aws s3api --profile {{ aws_profile }} put-public-access-block --bucket {{ _stack.template_bucket }} --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+  when: >-
+    _stack.state|default('present',true) == "present" and _stack.template_bucket and
+    _stack.template_bucket_path and _stack.template_local_path
+  tags: [bucket]
+
+- name: "upload CF template to {{ _stack.template_bucket }} bucket"
+  aws_s3:
+    bucket: "{{ _stack.template_bucket }}"
+    object: "{{ _stack.template_bucket_path }}"
+    src: "{{ _stack.template_local_path }}"
+    mode: put
+    encrypt: yes
+    permission: private
+    aws_access_key: '{{ _stack.aws_access_key|default(omit,true) }}'
+    aws_secret_key: '{{ _stack.aws_secret_key|default(omit,true) }}'
+    profile: '{{ _stack.profile|default(omit,true) }}'
+    region: '{{ _stack.region|default(omit,true) }}'
+  register: template_put
+  when: >-
+    _stack.state|default('present',true) == "present" and _stack.template_bucket and
+    _stack.template_bucket_path and _stack.template_local_path
+  tags: [bucket]
+
+- name: get secure template URL
+  set_fact:
+    cf_template_url: "{{ template_put.url }}"
+  when: >-
+    _stack.state|default('present',true) == "present" and _stack.template_bucket and
+    _stack.template_bucket_path and _stack.template_local_path
+  tags: [bucket]
+
+- name: create/update a cloudformation stack
+  cloudformation:
+    aws_access_key: '{{ _stack.aws_access_key|default(omit,true) }}'
+    aws_secret_key: '{{ _stack.aws_secret_key|default(omit,true) }}'
+    profile: '{{ _stack.profile|default(omit,true) }}'
+    region: '{{ _stack.region|default(omit,true) }}'
+    state: present
+    stack_name: '{{ _stack.stack_name|mandatory }}'
+    stack_policy: '{{ _stack.policy|default(omit,true) }}'
+    template: '{{ _stack.template|default(omit,true) }}'
+    template_body: '{{ _stack.template_body|default(omit,true)|string }}'
+    template_url: '{{ cf_template_url|default(omit,true) }}'
+    template_parameters: '{{ _stack.template_parameters|default(omit,true) }}'
+    tags: '{{ _stack.tags|default(omit,true) }}'
+    create_changeset: '{{ _stack.create_changeset|default(omit,true) }}'
+    disable_rollback: '{{ _stack.disable_rollback|default(omit,true) }}'
+    events_limit: '{{ _stack.events_limit|default(omit,true) }}'
+    termination_protection: '{{ _stack.termination_protection|default(omit,true) }}'
+    role_arn: '{{ _stack.role_arn|default(omit,true) }}'
+  when: _stack.state|default('present',true) == "present"
+  register: cloudformation_stack_result
+  tags: [cloudformation]
+
+- name: generate a dynamic inventory configuration for this stack
+  template:
+    src: 'aws_ec2.yml.j2'
+    dest: '{{ _stack.inventory_path }}'
+  when: _stack.state|default('present',true) == "present" and _stack.inventory_path|default(false,true)
+  tags: [cloudformation]
+
+- name: remove a cloudformation stack
+  cloudformation:
+    aws_access_key: '{{ _stack.aws_access_key|default(omit,true) }}'
+    aws_secret_key: '{{ _stack.aws_secret_key|default(omit,true) }}'
+    profile: '{{ _stack.profile|default(omit,true) }}'
+    state: absent
+    stack_name: '{{ _stack.stack_name|mandatory }}'
+  when: _stack.state|default('present',true) != "present"
+  register: cloudformation_stack_remove_result
+  tags: [cloudformation]
+
+- name: remove dynamic inventory configuration for this stack
+  file:
+    path: '{{ _stack.inventory_path }}'
+    state: absent
+  when: _stack.state|default('present',true) != "present" and _stack.inventory_path|default(false,true)
+  tags: [cloudformation]
+
+- name: print cf_stack_outputs
+  debug:
+    var: cloudformation_stack_result.stack_outputs
+  when: _stack.state|default('present',true) == "present"
+  tags: [cloudformation]

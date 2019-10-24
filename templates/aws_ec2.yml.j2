@@ -1,0 +1,38 @@
+---
+
+#
+# Generated (and removed) by caktus.aws-web-stacks role on provision/deprovision.
+#
+
+plugin: aws_ec2
+strict_permissions: no
+# strict: yes
+
+{% if _stack.profile|default(false,true) %}
+aws_profile: '{{ _stack.profile }}'
+{% endif %}
+
+{% if _stack.region|default(false,true) %}
+regions: ['{{ _stack.region }}']
+{% endif %}
+
+filters:
+  tag:aws:cloudformation:stack-name: '{{ _stack.stack_name }}'
+
+hostnames:
+  - dns-name
+  - private-dns-name
+  - instance-id
+  - ip-address
+  - private-ip-address
+
+keyed_groups:
+  - key: tags.Environment
+    prefix: 'env'
+  - key: tags['aws:cloudformation:stack-name']
+    prefix: 'stack'
+  - key: tags['aws-web-stacks:role']
+    prefix: 'role'
+
+compose:
+  ansible_host: public_ip_address|default(private_ip_address)
