@@ -36,7 +36,7 @@ Installation
       name: caktus.aws-web-stacks
 
 
-2. Copy aws-web-stacks YAML template (develop branch) to
+2. Copy an aws-web-stacks YAML template (``develop`` branch) to
 ``playbooks/files/ec2-nat.yml``.
 
 
@@ -73,7 +73,7 @@ Playbooks to provision and deprovision environments:
 
 Run playbook example::
 
-  ansible-playbook -vv -i deployment/environments/dev deployment/playbooks/provision.yml
+    ansible-playbook -vv -i deployment/environments/dev deployment/playbooks/provision.yml
 
 
 After provisioning, you can graph your inventory::
@@ -105,7 +105,7 @@ Simple inventory for local connections:
 
 .. code-block:: ini
 
-    # envs/dev/aws
+    # file: deployment/envs/dev/aws
 
     [aws]
     aws.amazon.com ansible_connection=local ansible_python_interpreter='/usr/bin/env python3'
@@ -114,7 +114,7 @@ Simple inventory for local connections:
 Vars
 ----------------------
 
-The following example use `Ansible's variable order of precedence`_ to allow
+The following examples use `Ansible's variable order of precedence`_ to allow
 overriding specific variables per-environment.
 
 .. _Ansible's variable order of precedence: https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html#variable-precedence-where-should-i-put-a-variable
@@ -124,7 +124,7 @@ Project (shared across environments) variables:
 .. code-block:: yaml
 
     ---
-    # playbooks/groups_vars/all/caktus.aws-web-stacks.yml
+    # file: deployment/playbooks/groups_vars/all/caktus.aws-web-stacks.yml
 
     # The following 4 variables could be in another variables file if
     # desired, but are included here for simplicity.
@@ -185,7 +185,7 @@ Per-environment variables:
 .. code-block:: yaml
 
     ---
-    # envs/dev/group_vars/all/vars.yml
+    # file: deployment/envs/dev/group_vars/all/vars.yml
     env_name: dev
     domain: dev.myproject.com
 
