@@ -7,11 +7,11 @@
   tags: [always]
 
 - name: "make sure {{ _stack.template_bucket }} bucket exists"
-  aws_s3:
-    bucket: "{{ _stack.template_bucket }}"
-    mode: create
-    encrypt: yes
-    permission: private
+  amazon.aws.s3_bucket:
+    name: "{{ _stack.template_bucket }}"
+    state: present
+    encryption: AES256
+    acl: private
     aws_access_key: '{{ _stack.aws_access_key|default(omit,true) }}'
     aws_secret_key: '{{ _stack.aws_secret_key|default(omit,true) }}'
     profile: '{{ _stack.profile|default(omit,true) }}'
