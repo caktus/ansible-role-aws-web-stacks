@@ -16,21 +16,18 @@
     aws_secret_key: '{{ _stack.aws_secret_key|default(omit,true) }}'
     profile: '{{ _stack.profile|default(omit,true) }}'
     region: '{{ _stack.region|default(omit,true) }}'
-  when: >-
-    _stack.state|default('present',true) == "present" and _stack.template_bucket and
-    _stack.template_bucket_path and _stack.template_local_path
-  tags: [bucket]
-
-# not possible to do this via Ansible modules as of 9/2019
-- name: block all public access via PublicAccessBlock configuration
-  command: "aws s3api --profile {{ aws_profile }} put-public-access-block --bucket {{ _stack.template_bucket }} --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+    public_access:
+      block_public_acls: true
+      block_public_policy: true
+      ignore_public_acls: true
+      restrict_public_buckets: true
   when: >-
     _stack.state|default('present',true) == "present" and _stack.template_bucket and
     _stack.template_bucket_path and _stack.template_local_path
   tags: [bucket]
 
 - name: "upload CF template to {{ _stack.template_bucket }} bucket"
-  aws_s3:
+  amazon.aws.s3_object:
     bucket: "{{ _stack.template_bucket }}"
     object: "{{ _stack.template_bucket_path }}"
     src: "{{ _stack.template_local_path }}"
@@ -56,7 +53,7 @@
   tags: [bucket]
 
 - name: create/update a cloudformation stack
-  cloudformation:
+  amazon.aws.cloudformation:
     aws_access_key: '{{ _stack.aws_access_key|default(omit,true) }}'
     aws_secret_key: '{{ _stack.aws_secret_key|default(omit,true) }}'
     profile: '{{ _stack.profile|default(omit,true) }}'
@@ -86,7 +83,7 @@
   tags: [cloudformation]
 
 - name: remove a cloudformation stack
-  cloudformation:
+  amazon.aws.cloudformation:
     aws_access_key: '{{ _stack.aws_access_key|default(omit,true) }}'
     aws_secret_key: '{{ _stack.aws_secret_key|default(omit,true) }}'
     profile: '{{ _stack.profile|default(omit,true) }}'
