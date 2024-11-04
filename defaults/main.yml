@@ -18,7 +18,7 @@ cloudformation_stack_tags: {}
 cloudformation_stack_create_changeset: true
 cloudformation_stack_disable_rollback: false
 cloudformation_stack_events_limit: 200
-cloudformation_stack_termination_protection: false
+cloudformation_stack_termination_protection: true
 cloudformation_stack_inventory_path: '{{ inventory_dir }}/aws_ec2.yml'
 cloudformation_stack_role_arn: ''
 
