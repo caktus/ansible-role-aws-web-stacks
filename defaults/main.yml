@@ -9,7 +9,7 @@ cloudformation_stack_name: 'example stack'
 cloudformation_stack_policy: ''
 cloudformation_stack_template_local_path: '{{ playbook_dir + "/files/ec2-nat.yml" }}'
 cloudformation_stack_template_bucket: 'aws-web-stacks-templates'
-cloudformation_stack_template_bucket_path: 'templates/{{ stack_name }}.yml'
+cloudformation_stack_template_bucket_path: 'templates/{{ cloudformation_stack_name }}.yml'
 cloudformation_stack_template: ''
 cloudformation_stack_template_body: ''
 cloudformation_stack_template_url: ''
@@ -18,7 +18,7 @@ cloudformation_stack_tags: {}
 cloudformation_stack_create_changeset: true
 cloudformation_stack_disable_rollback: false
 cloudformation_stack_events_limit: 200
-cloudformation_stack_termination_protection: false
+cloudformation_stack_termination_protection: true
 cloudformation_stack_inventory_path: '{{ inventory_dir }}/aws_ec2.yml'
 cloudformation_stack_role_arn: ''
 
