@@ -21,9 +21,11 @@
       block_public_policy: true
       ignore_public_acls: true
       restrict_public_buckets: true
-  when: >-
-    _stack.state|default('present',true) == "present" and _stack.template_bucket and
-    _stack.template_bucket_path and _stack.template_local_path
+  when:
+    - (_stack.state | default('present')) == "present"
+    - _stack.template_bucket | default('') != ''
+    - _stack.template_bucket_path | default('') != ''
+    - _stack.template_local_path | default('') != ''
   tags: [bucket]
 
 - name: "upload CF template to {{ _stack.template_bucket }} bucket"
@@ -39,17 +41,21 @@
     profile: '{{ _stack.profile|default(omit,true) }}'
     region: '{{ _stack.region|default(omit,true) }}'
   register: template_put
-  when: >-
-    _stack.state|default('present',true) == "present" and _stack.template_bucket and
-    _stack.template_bucket_path and _stack.template_local_path
+  when:
+    - (_stack.state | default('present')) == "present"
+    - _stack.template_bucket | default('') != ''
+    - _stack.template_bucket_path | default('') != ''
+    - _stack.template_local_path | default('') != ''
   tags: [bucket]
 
 - name: get secure template URL
   set_fact:
     cf_template_url: "{{ template_put.url }}"
-  when: >-
-    _stack.state|default('present',true) == "present" and _stack.template_bucket and
-    _stack.template_bucket_path and _stack.template_local_path
+  when:
+    - (_stack.state | default('present')) == "present"
+    - _stack.template_bucket | default('') != ''
+    - _stack.template_bucket_path | default('') != ''
+    - _stack.template_local_path | default('') != ''
   tags: [bucket]
 
 - name: create/update a cloudformation stack
@@ -61,9 +67,9 @@
     state: present
     stack_name: '{{ _stack.stack_name|mandatory }}'
     stack_policy: '{{ _stack.policy|default(omit,true) }}'
-    template: '{{ _stack.template|default(omit,true) }}'
-    template_body: '{{ _stack.template_body|default(omit,true)|string }}'
-    template_url: '{{ cf_template_url|default(omit,true) }}'
+    template: '{{ _stack.template if _stack.template|default("") else omit }}'
+    template_body: '{{ (_stack.template_body|string) if _stack.template_body|default("") else omit }}'
+    template_url: '{{ cf_template_url if cf_template_url|default("") else omit }}'
     template_parameters: '{{ _stack.template_parameters|default(omit,true) }}'
     tags: '{{ _stack.tags|default(omit,true) }}'
     create_changeset: '{{ _stack.create_changeset|default(omit,true) }}'
