@@ -79,7 +79,7 @@
   template:
     src: 'aws_ec2.yml.j2'
     dest: '{{ _stack.inventory_path }}'
-  when: _stack.state|default('present',true) == "present" and _stack.inventory_path|default(false,true)
+  when: _stack.state|default('present', true) == "present" and _stack.inventory_path|default('', true) != ""
   tags: [cloudformation]
 
 - name: remove a cloudformation stack
