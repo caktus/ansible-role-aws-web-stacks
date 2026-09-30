@@ -103,11 +103,13 @@
   file:
     path: '{{ _stack.inventory_path }}'
     state: absent
-  when: _stack.state|default('present',true) != "present" and _stack.inventory_path|default(false,true)
+  when: _stack.state|default('present',true) != "present" and _stack.inventory_path|default('', true) != ""
   tags: [cloudformation]
 
 - name: print cf_stack_outputs
   debug:
     var: cloudformation_stack_result.stack_outputs
-  when: _stack.state|default('present',true) == "present"
+  when: >-
+    _stack.state|default('present',true) == "present" and
+    cloudformation_stack_result.stack_outputs is defined
   tags: [cloudformation]
