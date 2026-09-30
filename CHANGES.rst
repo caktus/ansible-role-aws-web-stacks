@@ -2,6 +2,12 @@ caktus.aws-web-stacks
 ======================
 
 
+Unreleased
+----------
+
+* Make the remove-inventory conditional return a boolean (required by ansible-core 2.19+)
+
+
 v0.3.0
 ------
 
