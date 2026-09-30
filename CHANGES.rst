@@ -5,8 +5,12 @@ caktus.aws-web-stacks
 Unreleased
 ----------
 
-* Make the remove-inventory conditional return a boolean (required by ansible-core 2.19+)
-* Only print `stack_outputs` when defined (changeset runs have none)
+* Add support for Ansible 13 (ansible-core 2.19+), which requires conditionals to
+  be booleans: template bucket/upload/URL tasks use explicit checks, and
+  `template`, `template_body` and `template_url` are omitted when empty (#4)
+* Make the generate-inventory conditional return a boolean (#5)
+* Make the remove-inventory conditional return a boolean (#6)
+* Only print `stack_outputs` when defined, since changeset runs have none (#6)
 
 
 v0.3.0
