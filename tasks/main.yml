@@ -109,5 +109,7 @@
 - name: print cf_stack_outputs
   debug:
     var: cloudformation_stack_result.stack_outputs
-  when: _stack.state|default('present',true) == "present"
+  when: >-
+    _stack.state|default('present',true) == "present" and
+    cloudformation_stack_result.stack_outputs is defined
   tags: [cloudformation]
