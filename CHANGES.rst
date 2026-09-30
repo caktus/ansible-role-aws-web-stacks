@@ -2,8 +2,8 @@ caktus.aws-web-stacks
 ======================
 
 
-Unreleased
-----------
+v0.4.0
+------
 
 * Add support for Ansible 13 (ansible-core 2.19+), which requires conditionals to
   be booleans: template bucket/upload/URL tasks use explicit checks, and
