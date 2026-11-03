@@ -194,3 +194,59 @@ Per-environment variables:
       template_parameters:
         ContainerInstanceType: t3.micro
         DomainName: '{{ domain }}'
+
+
+EKS auto-updates stack (optional)
+---------------------------------
+
+aws-web-stacks 3.1 adds the SSM-based EKS nodegroup and addon upgrade resources
+into a separate ``*-eks-updates`` CloudFormation stack.
+This role can deploy (and remove) that dependent stack in the same run:
+
+.. code-block:: yaml
+
+    ---
+    # Setting the local template path is the on/off switch.
+    cloudformation_stack_updates_template_local_path: '{{ playbook_dir + "/stack/eks-nat-updates-x.x.x.yaml" }}'
+
+How it works:
+
+* After the main stack is created/updated, the role reads the main stack's
+  ``NodegroupName`` and ``ClusterName`` outputs from the CloudFormation task
+  result (``cloudformation_stack_result.stack_outputs``) and passes them to
+  the updates stack as the ``EksNodegroupName`` and ``EksClusterName``
+  parameters, so no project-specific variables are needed.
+* If the output is not available in the task result (e.g. the main stack
+  does not exist yet because its changeset has not been executed, 
+  the updates stack is skipped for that run. Re-run the playbook afterwards.
+* ``cloudformation_stack_result`` continues to refer to the *main* stack;
+  the updates stack result is registered as
+  ``cloudformation_stack_updates_result``, so a playbook can pause for a
+  changeset review of each stack separately:
+
+.. code-block:: yaml
+
+    ---
+    # playbook
+
+    - name: kubernetes cluster management
+      hosts: aws
+      gather_facts: false
+      roles:
+        - role: caktus.aws-web-stacks
+      tasks:
+        - name: Prompt if main CloudFormation stack changed
+          pause:
+            prompt: Review the changeset for the main stack in the AWS console
+          when: >-
+            cloudformation_stack_result is defined and
+            (cloudformation_stack_result.changed | default(false)
+             or cloudformation_stack_result.change_set_id is defined)
+
+        - name: Prompt if EKS auto-updates CloudFormation stack changed
+          pause:
+            prompt: Review the changeset for "{{ stack_name }}-eks-updates" in the AWS console
+          when: >-
+            cloudformation_stack_updates_result is defined and
+            (cloudformation_stack_updates_result.changed | default(false)
+             or cloudformation_stack_updates_result.change_set_id is defined)

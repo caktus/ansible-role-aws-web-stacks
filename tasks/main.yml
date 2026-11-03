@@ -3,6 +3,8 @@
 - name: combine default stack parameters with user-defined stack parameters
   set_fact:
     _stack: '{{ _cloudformation_stack_default|combine(cloudformation_stack|default({}),recursive=True) }}'
+    # Checks whether the EKS auto-updates stack is configured. The local template path is the on/off flag
+    _updates_stack_configured: '{{ (cloudformation_stack_updates_template_local_path | default("")) != "" }}'
   # no_log: true
   tags: [always]
 
@@ -112,4 +114,40 @@
   when: >-
     _stack.state|default('present',true) == "present" and
     cloudformation_stack_result.stack_outputs is defined
+  tags: [cloudformation]
+
+# EKS SSM auto-updates stack
+
+- name: extract the main stack's EKS cluster and nodegroup names for the updates stack
+  set_fact:
+    _main_stack_nodegroup_name: "{{ cloudformation_stack_result.stack_outputs.NodegroupName | default('') }}"
+    _main_stack_cluster_name: "{{ cloudformation_stack_result.stack_outputs.ClusterName | default('') }}"
+  when:
+    - _updates_stack_configured
+    - (_stack.state | default('present')) == "present"
+  tags: [cloudformation]
+
+- name: create/update the EKS auto-updates stack
+  amazon.aws.cloudformation:
+    aws_access_key: '{{ _stack.aws_access_key|default(omit,true) }}'
+    aws_secret_key: '{{ _stack.aws_secret_key|default(omit,true) }}'
+    profile: '{{ _stack.profile|default(omit,true) }}'
+    region: '{{ _stack.region|default(omit,true) }}'
+    state: present
+    stack_name: '{{ cloudformation_stack_updates_name }}'
+    template: '{{ cloudformation_stack_updates_template_local_path }}'
+    template_parameters:
+      EksClusterName: "{{ _main_stack_cluster_name }}"
+      EksNodegroupName: "{{ _main_stack_nodegroup_name }}"
+    tags: '{{ _stack.tags|default(omit,true) }}'
+    create_changeset: '{{ _stack.create_changeset|default(omit,true) }}'
+    disable_rollback: '{{ _stack.disable_rollback|default(omit,true) }}'
+    events_limit: '{{ _stack.events_limit|default(omit,true) }}'
+    termination_protection: '{{ _stack.termination_protection|default(omit,true) }}'
+  when:
+    - _updates_stack_configured
+    - _main_stack_nodegroup_name != ""
+    - _main_stack_cluster_name != ""
+    - (_stack.state | default('present')) == "present"
+  register: cloudformation_stack_updates_result
   tags: [cloudformation]
