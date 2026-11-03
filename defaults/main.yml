@@ -22,6 +22,14 @@ cloudformation_stack_termination_protection: true
 cloudformation_stack_inventory_path: '{{ inventory_dir }}/aws_ec2.yml'
 cloudformation_stack_role_arn: ''
 
+# Dependent updates stack for EKS SSM auto-updates template,
+# which manages nodegroup and addon upgrades outside the main stack.
+# Enabled by setting cloudformation_stack_updates_template_local_path.
+# The role then reads the main stack's NodegroupName and ClusterName outputs and
+# deploys the second stack with those as EksNodegroupName and EksClusterName respectively.
+cloudformation_stack_updates_name: '{{ cloudformation_stack_name }}-eks-updates'
+cloudformation_stack_updates_template_local_path: ''
+
 _cloudformation_stack_default:
   state: '{{ cloudformation_stack_state }}'
   aws_access_key: '{{ cloudformation_stack_aws_access_key }}'
